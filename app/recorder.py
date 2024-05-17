@@ -79,10 +79,10 @@ class Recorder(QObject):
                 filepath = os.path.join(self.json_dir, f'{self.recording_name}.json')
                 with open(filepath, 'w') as f:
                     json.dump(self.input_data, f)
+                self.recording_name = ""  # Reset the recording name after saving
 
-    def play_recording(self, filename):
+    def play_recording(self, filepath):
         try:
-            filepath = os.path.join(self.json_dir, filename)
             with open(filepath, 'r') as f:
                 input_data = json.load(f)
         except FileNotFoundError:
@@ -100,23 +100,13 @@ class Recorder(QObject):
                 self.press_key(event['key'])
 
     def press_key(self, key):
-        special_keys = {
-            'Key.backspace': 'backspace',
-            'Key.tab': 'tab',
-            'Key.enter': 'enter',
-            'Key.shift': 'shift',
-            'Key.ctrl': 'ctrl',
-            'Key.alt': 'alt',
-            'Key.esc': 'esc',
-            'Key.space': 'space',
-            'Key.left': 'left',
-            'Key.up': 'up',
-            'Key.right': 'right',
-            'Key.down': 'down',
-            'Key.delete': 'delete'
-        }
-        if key in special_keys:
-            pyautogui.press(special_keys[key])
+        special_keys = [
+            'backspace', 'tab', 'enter', 'shift', 'ctrl', 'alt', 'esc',
+            'space', 'left', 'up', 'right', 'down', 'delete'
+        ]
+        key_name = key.replace('Key.', '')
+        if key_name in special_keys:
+            pyautogui.press(key_name)
         elif len(key) == 1:
             pyautogui.typewrite(key)
         else:

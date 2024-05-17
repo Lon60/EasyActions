@@ -1,11 +1,38 @@
 import sys
 import os
 import threading
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QMessageBox, QListWidget, QListWidgetItem
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QMessageBox, QListWidget, QListWidgetItem, QHBoxLayout, QLabel
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import QSize
+from PyQt5.QtCore import QSize, Qt
 
 from app.recorder import Recorder
+
+class ListWidgetItem(QWidget):
+    def __init__(self, name, list_widget, json_dir):
+        super().__init__()
+        self.name = name
+        self.list_widget = list_widget
+        self.json_dir = json_dir
+
+        layout = QHBoxLayout()
+        self.label = QLabel(self.name)
+        layout.addWidget(self.label)
+
+        self.delete_button = QPushButton("X")
+        self.delete_button.setFixedSize(QSize(20, 20))
+        self.delete_button.clicked.connect(self.delete_item)
+        layout.addWidget(self.delete_button)
+
+        self.setLayout(layout)
+
+    def delete_item(self):
+        for i in range(self.list_widget.count()):
+            item = self.list_widget.item(i)
+            item_widget = self.list_widget.itemWidget(item)
+            if item_widget == self:
+                self.list_widget.takeItem(i)
+                break
+        os.remove(os.path.join(self.json_dir, f"{self.name}.json"))
 
 class App(QWidget):
     def __init__(self):
@@ -49,17 +76,25 @@ class App(QWidget):
             self.populate_recordings_list()
 
     def play_selected_recording(self, item):
-        recording_path = os.path.join(self.json_dir, f"{item.text()}.json")
-        threading.Thread(target=self.recorder.play_recording, args=(recording_path,)).start()
+        item_widget = self.recordings_list.itemWidget(item)
+        item_text = item_widget.name if item_widget else ""
+        if item_text:
+            recording_path = os.path.join(self.json_dir, f"{item_text}.json")
+            if os.path.exists(recording_path):
+                threading.Thread(target=self.recorder.play_recording, args=(recording_path,)).start()
+            else:
+                self.show_warning()
 
     def populate_recordings_list(self):
         self.recordings_list.clear()
         for filename in os.listdir(self.json_dir):
             if filename.endswith('.json'):
                 item_name = os.path.splitext(filename)[0]
-                item = QListWidgetItem(item_name)
-                item.setToolTip(f'Click to play {item_name}')
+                item_widget = ListWidgetItem(item_name, self.recordings_list, self.json_dir)
+                item = QListWidgetItem()
+                item.setSizeHint(item_widget.sizeHint())
                 self.recordings_list.addItem(item)
+                self.recordings_list.setItemWidget(item, item_widget)
 
     def show_warning(self):
         QMessageBox.warning(self, "Warning", "No recording file found.")
