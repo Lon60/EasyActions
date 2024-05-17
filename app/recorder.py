@@ -7,7 +7,7 @@ from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QInputDialog
 
 class Recorder(QObject):
-    warning_signal = pyqtSignal()  # Signal to show warning
+    warning_signal = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -18,7 +18,6 @@ class Recorder(QObject):
         self.keyboard_listener = None
         self.recording_name = ""
 
-        # Ensure the json directory exists
         self.json_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'json')
         os.makedirs(self.json_dir, exist_ok=True)
 
@@ -62,7 +61,7 @@ class Recorder(QObject):
 
     def stop_recording(self):
         if not self.recording:
-            return  # Exit if not recording
+            return
 
         self.recording = False
         if self.mouse_listener:
@@ -70,13 +69,10 @@ class Recorder(QObject):
         if self.keyboard_listener:
             self.keyboard_listener.stop()
 
-        # Remove the last action if exists
         if self.input_data:
             self.input_data.pop()
 
-        # Only prompt for a name if there are recorded events and recording is stopping for the first time
         if self.input_data and self.recording_name == "":
-            # Prompt the user for a recording name
             name, ok = QInputDialog.getText(None, 'Save Recording', 'Enter a name for the recording:')
             if ok and name:
                 self.recording_name = name
@@ -90,7 +86,7 @@ class Recorder(QObject):
             with open(filepath, 'r') as f:
                 input_data = json.load(f)
         except FileNotFoundError:
-            self.warning_signal.emit()  # Emit the warning signal
+            self.warning_signal.emit()
             return
 
         start_time = time.time()
